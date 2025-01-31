@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pembayaran KRS Blockchain</title>
+    <script src="https://cdn.jsdelivr.net/npm/web3@latest/dist/web3.min.js"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            margin: 20px;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+        }
+        input {
+            width: 90%;
+            padding: 8px;
+            margin: 5px 0;
+        }
+        button {
+            padding: 10px;
+            margin-top: 10px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Pembayaran KRS DApp</h1>
+        <button onclick="connectWallet()">Connect Wallet</button>
+        <p id="wallet-address"></p>
+
+        <h2>Pembayaran KRS</h2>
+        <input type="text" id="nama" placeholder="Nama Mahasiswa"><br>
+        <input type="text" id="nim" placeholder="NIM"><br>
+        <input type="number" id="jumlah" placeholder="Jumlah (ETH)"><br>
+        <button onclick="bayarKRS()">Bayar</button>
+    </div>
+
+    <script>
+        let web3;
+        let contract;
+        const contractAddress = "0x7EbbF43414c04B6B9210626aaF6cc06EC5920f31"; 
+
+        async function connectWallet() {
+            if (window.ethereum) {
+                web3 = new Web3(window.ethereum);
+                await window.ethereum.request({ method: "eth_requestAccounts" });
+                const accounts = await web3.eth.getAccounts();
+                document.getElementById("wallet-address").innerText = "Wallet: " + accounts[0];
+
+                const contractABI = [
+                    {
+                        "inputs": [
+                            { "internalType": "string", "name": "_nama", "type": "string" },
+                            { "internalType": "string", "name": "_nim", "type": "string" }
+                        ],
+                        "name": "bayarKRS",
+                        "outputs": [],
+                        "stateMutability": "payable",
+                        "type": "function"
+                    }
+                ];
+
+                contract = new web3.eth.Contract(contractABI, contractAddress);
+            } else {
+                alert("Metamask tidak ditemukan");
+            }
+        }
+
+        async function bayarKRS() {
+            const accounts = await web3.eth.getAccounts();
+            if (!accounts.length) {
+                alert("Wallet tidak terhubung!");
+                return;
+            }
+
+            const nama = document.getElementById("nama").value;
+            const nim = document.getElementById("nim").value;
+            const jumlah = web3.utils.toWei(document.getElementById("jumlah").value, "ether");
+
+            try {
+                await contract.methods.bayarKRS(nama, nim).send({
+                    from: accounts[0],
+                    value: jumlah
+                });
+                alert("Pembayaran berhasil!");
+                document.getElementById("nama").value = "";
+                document.getElementById("nim").value = "";
+                document.getElementById("jumlah").value = "";
+            } catch (error) {
+                console.error("Error saat pembayaran:", error);
+                alert("Gagal melakukan pembayaran. Cek console untuk detail.");
+            }
+        }
+    </script>
+</body>
+</html>
